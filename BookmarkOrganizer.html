@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bookmark Organizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #070b14;
+    --surface:  #0d1424;
+    --card:     #111827;
+    --border:   #1e2d45;
+    --accent:   #00c8ff;
+    --accent2:  #7c3aed;
+    --green:    #10d98a;
+    --red:      #ff4757;
+    --gold:     #f59e0b;
+    --text:     #e2e8f0;
+    --muted:    #64748b;
+    --mono:     'JetBrains Mono', monospace;
+    --sans:     'Syne', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── GRID BACKGROUND ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── GLOW ORBS ── */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px; left: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,200,255,0.07) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .orb2 {
+    position: fixed;
+    bottom: -200px; right: -200px;
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(124,58,237,0.07) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    margin-bottom: 48px;
+    text-align: center;
+  }
+
+  .logo-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,200,255,0.08);
+    border: 1px solid rgba(0,200,255,0.2);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    margin-bottom: 20px;
+  }
+
+  .logo-pill::before {
+    content: '';
+    width: 7px; height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  h1 {
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #ffffff 30%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 14px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 1rem;
+    font-weight: 400;
+    max-width: 500px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* ── DROP ZONE ── */
+  .dropzone {
+    border: 2px dashed var(--border);
+    border-radius: 20px;
+    padding: 60px 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    background: rgba(13,20,36,0.6);
+    backdrop-filter: blur(8px);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+
+  .dropzone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(0,200,255,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .dropzone:hover, .dropzone.dragover {
+    border-color: var(--accent);
+    background: rgba(0,200,255,0.04);
+    transform: translateY(-2px);
+    box-shadow: 0 20px 60px rgba(0,200,255,0.1);
+  }
+
+  .drop-icon {
+    font-size: 52px;
+    margin-bottom: 16px;
+    display: block;
+    filter: drop-shadow(0 0 20px rgba(0,200,255,0.3));
+  }
+
+  .drop-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .drop-sub {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-family: var(--mono);
+    margin-bottom: 24px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 28px;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(0,200,255,0.35); }
+  .btn:active { transform: translateY(0); }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--accent);
+    border: 1.5px solid var(--accent);
+  }
+  .btn-outline:hover { background: rgba(0,200,255,0.08); box-shadow: 0 8px 30px rgba(0,200,255,0.15); }
+
+  .btn-green { background: var(--green); color: #000; }
+  .btn-green:hover { box-shadow: 0 8px 30px rgba(16,217,138,0.35); }
+
+  #fileInput { display: none; }
+
+  /* ── PROCESSING ── */
+  #processing {
+    display: none;
+    text-align: center;
+    padding: 40px;
+  }
+
+  .spinner {
+    width: 48px; height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── STATS STRIP ── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .stat-card.blue::before  { background: var(--accent); }
+  .stat-card.green::before { background: var(--green); }
+  .stat-card.red::before   { background: var(--red); }
+
+  .stat-num {
+    font-size: 2rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    margin-bottom: 4px;
+  }
+
+  .stat-card.blue .stat-num  { color: var(--accent); }
+  .stat-card.green .stat-num { color: var(--green); }
+  .stat-card.red .stat-num   { color: var(--red); }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── ACTION BAR ── */
+  .action-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+    align-items: center;
+  }
+
+  .action-bar .spacer { flex: 1; }
+
+  /* ── SEARCH ── */
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .search-wrap input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 16px 10px 38px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap input::placeholder { color: var(--muted); }
+
+  .search-icon {
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  /* ── FOLDER TREE ── */
+  .folder-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .folder-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .folder-card:hover { border-color: rgba(0,200,255,0.3); }
+
+  .folder-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .folder-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .folder-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    flex: 1;
+  }
+
+  .folder-count {
+    background: rgba(0,200,255,0.12);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+
+  .folder-toggle {
+    color: var(--muted);
+    font-size: 12px;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+
+  .folder-card.open .folder-toggle { transform: rotate(180deg); }
+
+  .folder-body {
+    display: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .folder-card.open .folder-body { display: block; }
+
+  .subfolder {
+    border-bottom: 1px solid rgba(30,45,69,0.6);
+  }
+
+  .subfolder:last-child { border-bottom: none; }
+
+  .subfolder-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px 12px 44px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: color 0.15s;
+  }
+
+  .subfolder-header:hover { color: var(--text); }
+
+  .subfolder-header .sf-count {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    background: var(--surface);
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+
+  .sf-toggle {
+    font-size: 10px;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+
+  .subfolder.open .sf-toggle { transform: rotate(90deg); }
+
+  .bookmark-list {
+    display: none;
+    padding: 4px 0 8px 44px;
+  }
+
+  .subfolder.open .bookmark-list { display: block; }
+
+  .bookmark-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 7px 20px 7px 0;
+    font-size: 0.82rem;
+    border-radius: 8px;
+    transition: background 0.1s;
+  }
+
+  .bookmark-item:hover { background: rgba(255,255,255,0.03); }
+
+  .bookmark-item a {
+    color: #94a3b8;
+    text-decoration: none;
+    flex: 1;
+    line-height: 1.5;
+    word-break: break-word;
+    transition: color 0.15s;
+  }
+
+  .bookmark-item a:hover { color: var(--accent); }
+
+  .bm-dot {
+    width: 4px; height: 4px;
+    background: var(--border);
+    border-radius: 50%;
+    margin-top: 7px;
+    flex-shrink: 0;
+  }
+
+  /* ── FOOTER / DOWNLOAD ── */
+  .download-bar {
+    position: sticky;
+    bottom: 20px;
+    display: flex;
+    justify-content: center;
+    margin-top: 32px;
+    z-index: 10;
+  }
+
+  .download-card {
+    background: rgba(13,20,36,0.95);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .dl-text { font-size: 0.9rem; color: var(--muted); }
+  .dl-text strong { color: var(--text); }
+
+  /* ── EMPTY STATE / HIDDEN ── */
+  .hidden { display: none !important; }
+
+  /* ── MOBILE ── */
+  @media (max-width: 600px) {
+    .wrap { padding: 24px 14px 100px; }
+    .stats { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .stat-card { padding: 14px 8px; }
+    .stat-num { font-size: 1.4rem; }
+    .dropzone { padding: 40px 20px; }
+    .action-bar { flex-direction: column; align-items: stretch; }
+    .download-card { flex-direction: column; text-align: center; gap: 10px; }
+  }
+
+  /* ── HIGHLIGHT ── */
+  .highlight { background: rgba(0,200,255,0.15); border-radius: 3px; }
+
+  /* Color accents per folder */
+  .fi-0  { color: #00c8ff; } /* AI */
+  .fi-1  { color: #76ef80; } /* DGX */
+  .fi-2  { color: #ff9f43; } /* Cloud */
+  .fi-3  { color: #a29bfe; } /* Projects */
+  .fi-4  { color: #fd79a8; } /* Business */
+  .fi-5  { color: #ffeaa7; } /* Security */
+  .fi-6  { color: #55efc4; } /* Learning */
+  .fi-7  { color: #fab1a0; } /* Personal */
+  .fi-8  { color: #636e72; } /* Unsorted */
+</style>
+</head>
+<body>
+<div class="orb2"></div>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-pill">BOOKMARK ORGANIZER v2.0</div>
+    <h1>Organize Your Bookmarks</h1>
+    <p class="subtitle">Drop your Chrome/Firefox bookmark export and get a clean, categorized file back instantly — no data leaves your browser.</p>
+  </header>
+
+  <!-- DROP ZONE -->
+  <div class="dropzone" id="dropzone">
+    <span class="drop-icon">🗂️</span>
+    <div class="drop-title">Drop your bookmarks file here</div>
+    <div class="drop-sub">bookmarks.html · Netscape Bookmark Format</div>
+    <button class="btn" onclick="document.getElementById('fileInput').click()">
+      📂 Choose File
+    </button>
+    <input type="file" id="fileInput" accept=".html,.htm">
+    <p style="margin-top:16px;font-size:0.75rem;color:var(--muted);font-family:var(--mono)">
+      Chrome: Bookmarks Manager → ⋮ → Export<br>
+      Firefox: Bookmarks → Manage → Import and Backup → Export
+    </p>
+  </div>
+
+  <!-- PROCESSING -->
+  <div id="processing">
+    <div class="spinner"></div>
+    <p style="color:var(--muted);font-family:var(--mono);font-size:0.9rem">Parsing &amp; categorizing...</p>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" class="hidden">
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat-card blue">
+        <div class="stat-num" id="statTotal">0</div>
+        <div class="stat-label">Total Found</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-num" id="statOrganized">0</div>
+        <div class="stat-label">Organized</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-num" id="statSkipped">0</div>
+        <div class="stat-label">Removed Junk</div>
+      </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Filter bookmarks..." oninput="filterBookmarks(this.value)">
+      </div>
+      <button class="btn btn-outline" onclick="toggleAll(true)">Expand All</button>
+      <button class="btn btn-outline" onclick="toggleAll(false)">Collapse All</button>
+    </div>
+
+    <!-- Folder Tree -->
+    <div class="folder-grid" id="folderGrid"></div>
+
+    <!-- Sticky Download -->
+    <div class="download-bar">
+      <div class="download-card">
+        <div class="dl-text">Ready to import — <strong id="dlCount">0</strong> bookmarks organized</div>
+        <button class="btn btn-green" onclick="downloadHTML()">⬇️ Download Reorganized File</button>
+        <button class="btn btn-outline" onclick="resetApp()" style="font-size:0.85rem">↩ Start Over</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CATEGORIZATION ENGINE (ported from Python)
+// ═══════════════════════════════════════════════════════
+
+const SKIP_PATTERNS = [
+  'chrome://extensions','university.automationanywhere.com/simplesaml',
+  'idp.automationanywhere.com/s/registrationsuccess',
+  'candidatelaunchst.onvue.com','accounts.google.com/signup',
+  'wandb.ai/signup','shopee.com','dubaiangelinvestors','testbanks.wiley.com',
+  'app.copy.ai/login','bubble.io/login','jasper.ai','imagine.art/dashboard',
+  'one.com/admin','aibyhand.substack','yammer.com/deloitte',
+  'mydeloitte.portal.deloitte.ca/sites/resources',
+  'developer.nvidia.com/after_signup','sunriseidcart.com',
+  'aeroplan.com/enroll.do?source=sem','google.com/search?q=rideau+canal',
+  'google.ca/search?','google.com/search?q=aws+','google.ca/search?q=aws+',
+  'google.com/search?q=kubernetes+','google.com/search?q=gap+',
+  'getstarted.imvpinfo.com','free-braindumps.com','geneza','1napsgear',
+  'dnd2011.football.cbssports.com','miowatch.com','eplus.aspx',
+  'news.com/','cnn.com','espn.go.com','bbc.co.uk/news/front_page',
+  'canadamask.com/staging','thriveforward.com','precisionnutrition.com/blog',
+  'muscleandstrength.com/workouts','bodybuilding.com/fun',
+  'juicerecipes.com','comicspriceguide.com','cbssports.com',
+  'belairdirect.com','magnitt.com','becocapital.com','fastercapital.com',
+  'khaleejtimes.com','decktopus.com',
+  'noip.com/confirm','peoplesoft.ca.deloitte','consulting.global.deloitteonline',
+  'gims.deloitte','kx.deloitteresources','deloitte.venngo','er0.deloitteonline',
+  'deloitteonline.com','people.deloitteresources',
+  'bullhornstaffing.com','mypeoplenet.com','emerion.bbo',
+  'patentfile.org','sunbiz.org','appadvice.com/apps/real-estate',
+  'canadiankilometers.boardingarea.com','home.ancestry','ancestry.ca',
+  'comcast.business','talgov.com','hotmail',
+  'carma','i-doxs.net','healthmyself','gwl.greatwestlife',
+  'highmark.tech','mena.500.co',
+  'contabo.com','coinbase.com','gala.games','bullbitcoin.com',
+  'pompcryptojobs.com','creditkarma.ca','equitablebank.ca',
+  'mymortgage.firstnational.ca','enercare.ca','enbridgegas.com',
+  'mybell.bell.ca','nespresso.com','caaneo.ca',
+  'usaii.org','upwork.com','odoo.izysync',
+  'huru.ai','forrester.com/myaccount',
+  'cisecurity.org/downloads','kryteriononline.com',
+  'imdb.com','software77.net/cidr','freeccnaworkbook','netgear',
+  'meraki.com','sharepointgeorge.com','ledesigngroup.com',
+  'minops.com/blog','miracletutorials.com','portworx.com',
+  'dex.infoblox.com','partnernet.veritas.com','linuxacademy.com/cp/ssolo',
+  'diginomica.com','mckinsey.com','drive.google.com/drive/folders',
+  '163gc-my.sharepoint.com',
+  'calm.com','clockify.me','dext.com',
+  'go.calian.com','cofomo','ccf','cchportal','evantage.gilmoreglobal',
+  'claims.healthplusplan.ca','portal.healthmyself',
+  'checkout.decktopus','digicert.com/ssl','asq.org','cloudcraft.co',
+];
+
+const FOLDERS = [
+  { name: '1. AI Tools & Platforms', icon: '🤖', color: 0 },
+  { name: '2. NVIDIA DGX & Home Lab', icon: '🖥️', color: 1 },
+  { name: '3. Cloud Consoles & Infra', icon: '☁️', color: 2 },
+  { name: '4. CANCHAT & Active Projects', icon: '🚀', color: 3 },
+  { name: '5. Clients & Business', icon: '💼', color: 4 },
+  { name: '6. Security & Standards', icon: '🔐', color: 5 },
+  { name: '7. Learning & Certifications', icon: '🎓', color: 6 },
+  { name: '8. Personal', icon: '🏠', color: 7 },
+  { name: '9. Archive & Unsorted', icon: '📦', color: 8 },
+];
+
+function categorize(title, url) {
+  const t = title.toLowerCase();
+  const u = url.toLowerCase();
+
+  for (const p of SKIP_PATTERNS) {
+    if (u.includes(p) || t.includes(p)) return ['_SKIP', '_SKIP'];
+  }
+  if (!title.trim() || title === '#') return ['_SKIP', '_SKIP'];
+
+  // ── 1. AI TOOLS & PLATFORMS ─────────────────────────────
+  const frontierModels = ['claude.ai','anthropic.com','claudecertifications.com',
+    'chatgpt.com','openai.com','platform.openai.com','academy.openai.com',
+    'gemini.google.com','grok.com','perplexity.ai','notebooklm.google','aistudio.google.com'];
+  if (frontierModels.some(s => u.includes(s))) return ['1. AI Tools & Platforms','Frontier Models'];
+  if (u.includes('6ffzjdji.chat.qbusiness') || t.includes('amazon q')) return ['1. AI Tools & Platforms','Frontier Models'];
+
+  const aiDevTools = ['huggingface.co','n8n.io','n8n.cloud','genrtvai.app.n8n.cloud','zapier.com','bolt.new','manus.im',
+    'theresanaiforthat.com','artificialanalysis.ai','nomic.ai','polymarket.com','moltbook.com',
+    'symbioism.com','smarterx.ai','momentoai.com','joinsuperhuman','agentgateway.dev',
+    'planet-ai.com','singularitynet.io','lifearchitect.ai','ai-2027.com','poloclub.github.io',
+    'pianalytix.com','aitopics.org','sharper.ai/taxonomy','biostack.netlify','dexa.ai'];
+  if (aiDevTools.some(s => u.includes(s))) return ['1. AI Tools & Platforms','AI Dev Tools & Apps'];
+
+  if (['automationanywhere.com','community.automationanywhere','pathfinder.automationanywhere','trydeepteam.com'].some(s => u.includes(s)))
+    return ['1. AI Tools & Platforms','Agentic & Automation'];
+
+  const aiResearch = ['arxiv.org','alphaxiv.org','news.mit.edu/topic/artificial','news.mit.edu/topic/autonomous',
+    'news.mit.edu/topic/natural-language','deepmind.google','ethz.ch/en/news-and-events/eth-news/news/2025',
+    'cognilytica.com','colah.github.io','storage.googleapis.com/pub-tools','medium.com/analytics-vidhya',
+    'machinelearningmastery.com','vas3k.com','gartner.com','scholar.google','neuralswarm.com',
+    'dl.acm.org','hcie.csail.mit.edu','programs.sigchi.org','chi2023.acm.org','uist.acm.org',
+    'iui.acm.org','ncbi.nlm.nih.gov/pmc/articles/pmc10534908','thinkingmachines.ai','gandalf.lakera.ai'];
+  if (aiResearch.some(s => u.includes(s))) return ['1. AI Tools & Platforms','AI Research & Reading'];
+  if (['generative adversarial','attention is all you need','language model built for','emotional artificial intelligence','solow paradox','ai 2027'].some(k => t.includes(k)))
+    return ['1. AI Tools & Platforms','AI Research & Reading'];
+  if (u.includes('medium.com') && ['ai','machine learning','llm','neural','bias'].some(k => t.includes(k)))
+    return ['1. AI Tools & Platforms','AI Research & Reading'];
+
+  // ── 2. NVIDIA DGX & HOME LAB ──────────────────────────
+  const dgxPatterns = ['github.com/genertvai/dgx','localhost:11000','192.168.2.87',
+    'nvidia.com/en-us/products/workstations/dgx','build.nvidia.com/spark','build.nvidia.com/nvidia',
+    'developer.nvidia.com','docs.nvidia.com','pypi.org','anaconda','conda.io','localhost:','127.0.0.1'];
+  if (dgxPatterns.some(s => u.includes(s))) return ['2. NVIDIA DGX & Home Lab','DGX & ML Stack'];
+  if (t.includes('dgx spark') || u.includes('spark-257.local')) return ['2. NVIDIA DGX & Home Lab','DGX & ML Stack'];
+  if (t.toLowerCase().includes('rclone') || u.includes('rclone')) return ['2. NVIDIA DGX & Home Lab','DGX & ML Stack'];
+
+  const homeNet = ['192.168.0.1','192.168.0.2','192.168.2.1','router.asus.com',
+    'protectli.com','kb.protectli','tailscale.com','1password','home-assistant.io'];
+  if (homeNet.some(s => u.includes(s))) return ['2. NVIDIA DGX & Home Lab','Home Network'];
+
+  // ── 3. CLOUD CONSOLES & INFRA ─────────────────────────
+  const awsConsole = ['console.aws.amazon.com','us-east-1.console.aws','us-east-2.console.aws',
+    'signin.aws.amazon.com','iamv2/home','jdcp-landingzone.awsapps.com','view.awsapps.com',
+    'keithcpinott.awsapps.com','amazon.com/ap/signin','aws.psiexams.com/#/dashboard'];
+  if (awsConsole.some(s => u.includes(s))) return ['3. Cloud Consoles & Infra','AWS Console'];
+
+  const gcpConsole = ['console.cloud.google.com','admin.google.com','studio--studio-1973131609',
+    'studio.firebase.google.com','cloud.withgoogle.com/region-picker'];
+  if (gcpConsole.some(s => u.includes(s))) return ['3. Cloud Consoles & Infra','GCP Console'];
+
+  const azurePortal = ['portal.azure.com','account.activedirectory.windowsazure','invitations.microsoft.com',
+    'dev.azure.com','skillpipe.com','www.office.com'];
+  if (azurePortal.some(s => u.includes(s))) return ['3. Cloud Consoles & Infra','Azure Portal'];
+
+  const devTools = ['github.com/settings','github.com/new','mskeggs.sharefile.com','vault.bitwarden.com','replit.com'];
+  if (devTools.some(s => u.includes(s))) return ['3. Cloud Consoles & Infra','Dev & Infra Tools'];
+  if (u.includes('github.com') && ['github','repo','source','code','ssc-dsai','az devops','azure gr','guardrail'].some(k => t.includes(k)))
+    return ['3. Cloud Consoles & Infra','Dev & Infra Tools'];
+
+  const awsArch = ['aws.amazon.com/architecture','aws.amazon.com/elasticache','aws.amazon.com/rds',
+    'aws.amazon.com/autoscaling','aws.amazon.com/faqs','aws.amazon.com/usergroups',
+    'aws.amazon.com/about-aws/whats-new','cloudacademy.com/blog/architecting',
+    'd1.awsstatic.com/whitepapers/architecture','d36cz9buwru1tt.cloudfront.net',
+    'media.amazonwebservices.com','calculator.s3.amazonaws.com','d1.awsstatic.com/aws-answers'];
+  if (awsArch.some(s => u.includes(s))) return ['3. Cloud Consoles & Infra','AWS Architecture Reference'];
+
+  const azureArch = ['docs.microsoft.com/en-us/azure','learn.microsoft.com/en-us/azure',
+    'azure.microsoft.com','infrastructuremap.microsoft.com','docs.openshift.com',
+    'cloud-service-azure.pages.wadatsumi','cloud.netapp.com'];
+  if (azureArch.some(s => u.includes(s))) return ['3. Cloud Consoles & Infra','Azure Architecture Reference'];
+
+  const k8s = ['kubernetes.io','landscape.cncf.io','ibm.github.io/spm-kubernetes'];
+  if (k8s.some(s => u.includes(s))) return ['3. Cloud Consoles & Infra','Containers & Kubernetes'];
+
+  const cloudMisc = ['mongodb.com/cloud/atlas','hadoop.apache.org','google.qwiklabs.com','exitcertified.qwiklab',
+    'services.google.com/fh/files/misc/google_cloud_adoption','landing.google.com/sre',
+    'slideshare.net/confluentinc','info.sada.com/ebook/gcp-vs-aws'];
+  if (cloudMisc.some(s => u.includes(s))) return ['3. Cloud Consoles & Infra','Cloud Architecture Reference'];
+
+  if (['dynatrace.com','sysdig.com'].some(s => u.includes(s))) return ['3. Cloud Consoles & Infra','Cloud Monitoring'];
+
+  // ── 4. CANCHAT & ACTIVE PROJECTS ──────────────────────
+  const canchatPat = ['canchat','threat-composer.dsai','trojai','163gc.sharepoint.com',
+    'dsai.atlassian.net','github.com/ssc-dsai','awslabs.github.io/threat-composer',
+    'whybot-khaki.vercel.app','app.diagrams.net','lucid.app/lucidchart','lucid.app/documents'];
+  if (canchatPat.some(s => u.includes(s))) return ['4. CANCHAT & Active Projects','CANCHAT Project'];
+  if (u.includes('104.154.53.193') || t.includes('castleguard')) return ['4. CANCHAT & Active Projects','CANCHAT Project'];
+  if (u.includes('docs.google.com/document')) {
+    if (['canchat','threat','architecture','ai ontology','knowledge base','8 ai skills'].some(k => t.includes(k)))
+      return ['4. CANCHAT & Active Projects','CANCHAT Project'];
+    return ['4. CANCHAT & Active Projects','Working Documents'];
+  }
+  if (u.includes('docs.google.com/spreadsheets') || u.includes('drive.google.com/file'))
+    return ['4. CANCHAT & Active Projects','Working Documents'];
+  if (['ai thread model architecture','ai ontology working document','architecture diagrams'].some(k => t.includes(k)))
+    return ['4. CANCHAT & Active Projects','CANCHAT Project'];
+
+  // ── 5. CLIENTS & BUSINESS ─────────────────────────────
+  const malpasoPatterns = ['mail.zohocloud.ca','zoom.us/meeting','membership.glgresearch.com',
+    'members.glgresearch.com','godaddy.com','app.asana.com','home.atlassian.com',
+    'rebs-kvz.atlassian.net','atlassian.net/jira'];
+  if (malpasoPatterns.some(s => u.includes(s))) return ['5. Clients & Business','MALPASO / SAICLOUDSECURE'];
+
+  const clients = ['ssc-spc.gc.ca','canada.ca','gc.ca','rcmp','cbsa-asfc','ircc.canada',
+    'esp-pse.ssc-spc','cra-arc.gc.ca','scalardecisionsinc.sharepoint.com','fujitsucan.sharepoint.com',
+    'consulting.deloitteresources'];
+  if (clients.some(s => u.includes(s))) return ['5. Clients & Business','Client Portals'];
+
+  const finance = ['questrade.com','betterment.com','wealthfront.com','lsp.continentalstock.com',
+    'myportal.questrade.com','continentalstock.com'];
+  if (finance.some(s => u.includes(s))) return ['5. Clients & Business','Finance & Investments'];
+
+  if (u.includes('nutanix.portal.relayware') || u.includes('cohesity.com') || u.includes('cohesity'))
+    return ['5. Clients & Business','Vendor Portals'];
+
+  // ── 6. SECURITY & STANDARDS ───────────────────────────
+  const threatMod = ['owasp.org','genai.owasp.org','atlas.mitre.org','attack.mitre.org',
+    'aws.amazon.com/blogs/security/threat','catalog.workshops.aws/threatmodel',
+    'media.defense.gov/2022/aug/29','sentinelone.com','aquasec.com',
+    'microsoft.com/en-us/security/blog/2024'];
+  if (threatMod.some(s => u.includes(s))) return ['6. Security & Standards','Threat Modelling & AI Security'];
+  if (['red team','threat model','kubernetes hardening','kubernetes security','llm security',
+    'adversarial','cybersecurity threat','intrusion detection'].some(k => t.includes(k)))
+    return ['6. Security & Standards','Threat Modelling & AI Security'];
+
+  const standards = ['nist.gov','csrc.nist.gov','nvlpubs.nist.gov','cisa.gov','cyber.gc.ca/en/guidance',
+    'cloudsecurityalliance.org','iso.org','ieee.org','omg.org','techpolicy.press/unpacking-new-nist',
+    'standardshub-espacesnormes'];
+  if (standards.some(s => u.includes(s))) return ['6. Security & Standards','Standards Bodies (NIST / CISA / CSA)'];
+
+  const secRef = ['isc2.org','ieeexplore.ieee.org','cybrary.it','intruder.io','secureworks.com',
+    'csoonline.com/article/3247848','letsencrypt.org','synopsys.com','devsecops.org','ico.org.uk',
+    'aws.amazon.com/blogs/security','d1.awsstatic.com/whitepapers/security',
+    'd1.awsstatic.com/aws-answers/aws_multi_account_security'];
+  if (secRef.some(s => u.includes(s))) return ['6. Security & Standards','Cloud Security Reference'];
+  if (['zero trust','ztna','pbmm','itsg-33','nist 800','fedramp','security assessment',
+    'vulnerability assessment','cybersecurity','antivirus','public-key cryptography',
+    'ccsp','devsecops pipeline','security benchmark'].some(k => t.includes(k)))
+    return ['6. Security & Standards','Cloud Security Reference'];
+
+  // ── 7. LEARNING & CERTIFICATIONS ──────────────────────
+  const awsCert = ['explore.skillbuilder.aws','skillbuilder.aws','login.us-east-1.auth.skillbuilder.aws',
+    'cp.certmetrics.com','identity.psionline.com','awscertificationpractice.benchprep','app.pluralsight.com',
+    'aws.amazon.com/certification','udemy.com/course/aws','udemy.com/aws-certified','learn.cantrill.io',
+    'acloud.guru','learn.acloud.guru','courses.datacumulus.com','jayendrapatil.com','ozaws.com',
+    'slideshare.net/secret','gist.github.com/leonardofed','d1.awsstatic.com/training','d0.awsstatic.com/training',
+    'awstrainingandcertification.s3','aws.training'];
+  if (awsCert.some(s => u.includes(s))) return ['7. Learning & Certifications','AWS Certification'];
+  if (['aws certified','aws certification','aws pro cert','aws sysops','sap-c01','sap-c02',
+    'aif-c01','aws solutions architect','aws ai practitioner'].some(k => t.includes(k)))
+    return ['7. Learning & Certifications','AWS Certification'];
+
+  const mitAI = ['emeritus.org','classroom.emeritus.org','executive-ed.xpro.mit.edu','introtodeeplearning.com'];
+  if (mitAI.some(s => u.includes(s))) return ['7. Learning & Certifications','MIT & AI Courses'];
+
+  const aiCourses = ['deeplearning.ai','coursera.org','manning.com/books','penguinrandomhouse.com',
+    'elementsofai.com','inferentialthinking.com','courses.edx.org','edx.org/course','zerotomastery.io',
+    'brilliant.org','guides.instructure.com','training.advisera.com','udemy.com/course/professional',
+    'dr-darryl-wright.github.io','interviewsteps.com','app.exampro.co','nuschool','deloitteca.udemy',
+    'class-central.com','cloudskillsboost.google'];
+  if (aiCourses.some(s => u.includes(s))) return ['7. Learning & Certifications','AI & ML Courses'];
+
+  const pythonData = ['docs.python.org','realpython.com','w3schools.com','stackoverflow.com',
+    'developers.google.com/machine-learning','dataquest.io','datacamp.com','statology.org',
+    'infosysbpm.com','mmlab.ie.cuhk.edu.hk','khanacademy.org','scikit-learn.org','pytorch.org',
+    'docs.pytorch.org','colab.research.google.com','kaggle.com','tiktokenizer.vercel.app',
+    'bigdata-madesimple.com','data8.org','github.com/mrdbourke','github.com/rasbt'];
+  if (pythonData.some(s => u.includes(s))) return ['7. Learning & Certifications','Python & Data Science'];
+
+  const awsRef = ['aws.amazon.com','d1.awsstatic.com','d0.awsstatic.com','media.amazonwebservices.com',
+    'docs.aws.amazon.com','cloudacademy.com'];
+  if (awsRef.some(s => u.includes(s))) return ['7. Learning & Certifications','AWS Reference Docs'];
+
+  if (u.includes('reddit.com/r/aws') || u.includes('quora.com'))
+    return ['7. Learning & Certifications','AWS Reference Docs'];
+
+  if (u.includes('youtube.com') || u.includes('youtu.be')) {
+    if (['aws','cloud','azure','gcp','kubernetes','docker','deep learning','machine learning',
+      'neural','data lake','cissp','dynamo','snowflake','hadoop','certif','generative','llm',
+      'transformer','agent',' ai ','gpu','mlops','devops','devsecops'].some(k => t.includes(k)))
+      return ['7. Learning & Certifications','Video Tutorials'];
+    return ['8. Personal','News & Misc'];
+  }
+
+  if (u.includes('udemy.com')) return ['7. Learning & Certifications','AI & ML Courses'];
+
+  if (['docs.microsoft.com/en-us/learn','learn.microsoft.com/en-us/previous','github.com/microsoftlearning'].some(s => u.includes(s)))
+    return ['7. Learning & Certifications','Azure Learning'];
+
+  // ── 8. PERSONAL ───────────────────────────────────────
+  if (u.includes('airmiles.ca') || u.includes('www3.aeroplan.com')) return ['8. Personal','Travel & Loyalty'];
+  if (['linkedin.com','news.bbc.co.uk','forbes.com','theguardian.com','marinetraffic.com',
+    'oracle.com/ca-en/news','blogs.oracle.com','fedtechmagazine.com','justice.gc.ca',
+    'business2community.com','perplexity.ai/search','news.berkeley.edu'].some(s => u.includes(s)))
+    return ['8. Personal','News & Misc'];
+
+  // Catch-all cloud
+  if (['azure.com','microsoft.com'].some(s => u.includes(s))) return ['3. Cloud Consoles & Infra','Azure Architecture Reference'];
+  if (['cloud.ibm.com','ibm.com'].some(s => u.includes(s))) return ['3. Cloud Consoles & Infra','Cloud Architecture Reference'];
+
+  return ['9. Archive & Unsorted','Unsorted'];
+}
+
+// ═══════════════════════════════════════════════════════
+// BOOKMARK PARSER
+// ═══════════════════════════════════════════════════════
+
+function parseBookmarks(html) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const links = doc.querySelectorAll('a[href]');
+  const seen = new Map();
+  links.forEach(a => {
+    const url = a.getAttribute('href');
+    const title = a.textContent.trim();
+    if (url && title && !seen.has(url)) {
+      seen.set(url, title);
+    }
+  });
+  return seen;
+}
+
+function organizeBookmarks(seen) {
+  let skipped = 0;
+  const structure = {};
+
+  for (const [url, title] of seen) {
+    const [folder, subfolder] = categorize(title, url);
+    if (folder === '_SKIP') { skipped++; continue; }
+    if (!structure[folder]) structure[folder] = {};
+    if (!structure[folder][subfolder]) structure[folder][subfolder] = [];
+    structure[folder][subfolder].push({ title, url });
+  }
+
+  // Sort bookmarks within each subfolder
+  for (const f of Object.values(structure)) {
+    for (const sf of Object.values(f)) {
+      sf.sort((a,b) => a.title.localeCompare(b.title));
+    }
+  }
+
+  return { structure, skipped };
+}
+
+// ═══════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════
+
+let globalStructure = {};
+let globalTotal = 0;
+let globalSkipped = 0;
+
+function processFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('dropzone').classList.add('hidden');
+    document.getElementById('processing').style.display = 'block';
+
+    setTimeout(() => {
+      const html = e.target.result;
+      const seen = parseBookmarks(html);
+      globalTotal = seen.size;
+
+      const { structure, skipped } = organizeBookmarks(seen);
+      globalStructure = structure;
+      globalSkipped = skipped;
+
+      const organized = globalTotal - skipped;
+      document.getElementById('statTotal').textContent = globalTotal.toLocaleString();
+      document.getElementById('statOrganized').textContent = organized.toLocaleString();
+      document.getElementById('statSkipped').textContent = skipped.toLocaleString();
+      document.getElementById('dlCount').textContent = organized.toLocaleString();
+
+      renderFolders(structure);
+
+      document.getElementById('processing').style.display = 'none';
+      document.getElementById('results').classList.remove('hidden');
+    }, 300);
+  };
+  reader.readAsText(file);
+}
+
+const FOLDER_META = {
+  '1. AI Tools & Platforms': { icon: '🤖', colorClass: 'fi-0' },
+  '2. NVIDIA DGX & Home Lab': { icon: '🖥️', colorClass: 'fi-1' },
+  '3. Cloud Consoles & Infra': { icon: '☁️', colorClass: 'fi-2' },
+  '4. CANCHAT & Active Projects': { icon: '🚀', colorClass: 'fi-3' },
+  '5. Clients & Business': { icon: '💼', colorClass: 'fi-4' },
+  '6. Security & Standards': { icon: '🔐', colorClass: 'fi-5' },
+  '7. Learning & Certifications': { icon: '🎓', colorClass: 'fi-6' },
+  '8. Personal': { icon: '🏠', colorClass: 'fi-7' },
+  '9. Archive & Unsorted': { icon: '📦', colorClass: 'fi-8' },
+};
+
+function renderFolders(structure, filterText = '') {
+  const grid = document.getElementById('folderGrid');
+  grid.innerHTML = '';
+  const ft = filterText.toLowerCase();
+
+  for (const folderName of Object.keys(structure).sort()) {
+    const subfolders = structure[folderName];
+    const meta = FOLDER_META[folderName] || { icon: '📁', colorClass: 'fi-8' };
+
+    let filteredSubs = {};
+    let totalInFolder = 0;
+
+    for (const sfName of Object.keys(subfolders).sort()) {
+      const items = subfolders[sfName].filter(bm =>
+        !ft || bm.title.toLowerCase().includes(ft) || bm.url.toLowerCase().includes(ft)
+      );
+      if (items.length) {
+        filteredSubs[sfName] = items;
+        totalInFolder += items.length;
+      }
+    }
+
+    if (!totalInFolder) continue;
+
+    const card = document.createElement('div');
+    card.className = 'folder-card' + (ft ? ' open' : '');
+    card.innerHTML = `
+      <div class="folder-header" onclick="toggleFolder(this.parentElement)">
+        <span class="folder-icon ${meta.colorClass}">${meta.icon}</span>
+        <span class="folder-name">${folderName}</span>
+        <span class="folder-count">${totalInFolder}</span>
+        <span class="folder-toggle">▼</span>
+      </div>
+      <div class="folder-body">
+        ${Object.entries(filteredSubs).map(([sfName, items]) => `
+          <div class="subfolder${ft ? ' open' : ''}">
+            <div class="subfolder-header" onclick="toggleSubfolder(this.parentElement)">
+              <span class="sf-toggle">▶</span>
+              <span>${sfName}</span>
+              <span class="sf-count">${items.length}</span>
+            </div>
+            <div class="bookmark-list">
+              ${items.map(bm => {
+                const displayTitle = ft
+                  ? bm.title.replace(new RegExp(`(${escapeRe(ft)})`, 'gi'), '<mark class="highlight">$1</mark>')
+                  : bm.title;
+                return `<div class="bookmark-item">
+                  <span class="bm-dot"></span>
+                  <a href="${escapeHtml(bm.url)}" target="_blank" title="${escapeHtml(bm.url)}">${displayTitle}</a>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+        `).join('')}
+      </div>`;
+    grid.appendChild(card);
+  }
+}
+
+function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function toggleFolder(card) {
+  card.classList.toggle('open');
+}
+
+function toggleSubfolder(sf) {
+  sf.classList.toggle('open');
+}
+
+function toggleAll(open) {
+  document.querySelectorAll('.folder-card').forEach(c => c.classList.toggle('open', open));
+  document.querySelectorAll('.subfolder').forEach(s => s.classList.toggle('open', open));
+}
+
+let filterTimer;
+function filterBookmarks(val) {
+  clearTimeout(filterTimer);
+  filterTimer = setTimeout(() => renderFolders(globalStructure, val), 200);
+}
+
+function downloadHTML() {
+  const lines = [
+    '<!DOCTYPE NETSCAPE-Bookmark-file-1>\n',
+    '<!-- Reorganized Bookmarks — Keith Patterson -->\n',
+    '<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n',
+    '<TITLE>Bookmarks</TITLE>\n','<H1>Bookmarks</H1>\n','<DL><p>\n',
+    '    <DT><H3 PERSONAL_TOOLBAR_FOLDER="true">Bookmarks Bar</H3>\n','    <DL><p>\n'
+  ];
+
+  for (const folderName of Object.keys(globalStructure).sort()) {
+    lines.push(`        <DT><H3>${escapeHtml(folderName)}</H3>\n        <DL><p>\n`);
+    for (const sfName of Object.keys(globalStructure[folderName]).sort()) {
+      lines.push(`            <DT><H3>${escapeHtml(sfName)}</H3>\n            <DL><p>\n`);
+      for (const bm of globalStructure[folderName][sfName]) {
+        lines.push(`                <DT><A HREF="${escapeHtml(bm.url)}">${escapeHtml(bm.title)}</A>\n`);
+      }
+      lines.push('            </DL><p>\n');
+    }
+    lines.push('        </DL><p>\n');
+  }
+  lines.push('    </DL><p>\n</DL><p>\n');
+
+  const blob = new Blob([lines.join('')], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'bookmarks_reorganized.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function resetApp() {
+  globalStructure = {};
+  globalTotal = 0;
+  globalSkipped = 0;
+  document.getElementById('results').classList.add('hidden');
+  document.getElementById('dropzone').classList.remove('hidden');
+  document.getElementById('searchInput').value = '';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('folderGrid').innerHTML = '';
+}
+
+// ── DRAG & DROP ─────────────────────────────────────────
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+
+dropzone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropzone.classList.add('dragover');
+});
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) processFile(fileInput.files[0]);
+});
+</script>
+</body>
+</html>
